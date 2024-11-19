@@ -3,5 +3,5 @@ pub fn square(s: u32) -> u64 {
 }
 
 pub fn total() -> u64 {
-    (1..=64).into_iter().map(|s| square(s)).sum()
+    (2_u128.pow(64) - 1) as u64
 }
