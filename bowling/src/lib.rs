@@ -7,13 +7,14 @@ pub enum Error {
 #[derive(Clone, Copy)]
 pub enum Frame {
     Strike,
-    Spare(u16, u16),
-    Open(u16, u16),
+    Spare(Option<u16>, Option<u16>),
+    Open(Option<u16>, Option<u16>),
+    TenthFrame(Option<u16>,Option<u16>,Option<u16>)
 }
 
 pub struct BowlingGame {
     completed_frames: Vec<Frame>,
-    current_frame: Option<u16>, // First throw of the current frame, if any
+    current_frame: Option<Frame>, // First throw of the current frame, if any
 }
 
 impl BowlingGame {
@@ -25,33 +26,47 @@ impl BowlingGame {
     }
 
     pub fn roll(&mut self, pins: u16) -> Result<(), Error> {
-        if self.completed_frames.len() == 10 {
-            return Err(Error::GameComplete);
-        }
-        match pins {
-            pins if pins > 10 => return Err(Error::NotEnoughPinsLeft),
-            _ => match self.current_frame {
-                Some(first_throw) => match (first_throw + pins) {
-                    sum_pins if sum_pins > 10 => return Err(Error::NotEnoughPinsLeft),
-                    10 => {
-                        self.completed_frames.push(Frame::Spare(first_throw, pins));
-                        self.current_frame = None
-                    }
-                    _ => {
-                        self.completed_frames.push(Frame::Open(first_throw, pins));
-                        self.current_frame = None
-                    }
-                },
-                None => {
-                    if pins == 10 {
-                        self.completed_frames.push(Frame::Strike);
-                    } else {
-                        self.current_frame = Some(pins)
+        if self.completed_frames.len() == 9 {
+                match pins{
+                    pins if pins > 10 => return Err(Error::NotEnoughPinsLeft),
+                    _ => match self.current_frame {
+                        Some((Frame::TenthFrame(first_throw, second_throw, third_throw))) => match first_throw {
+                            Some(first_throw) => (),
+
+                        },
+                        None => self.current_frame = Some(Frame::TenthFrame(Some(pins), None, None)),
                     }
                 }
-            },
+            
+        }else{
+
+            match pins {
+                pins if pins > 10 => return Err(Error::NotEnoughPinsLeft),
+                _ => match self.current_frame {
+                    Some(first_throw) => match (first_throw + pins) {
+                        sum_pins if sum_pins > 10 => return Err(Error::NotEnoughPinsLeft),
+                        10 => {
+                            self.completed_frames.push(Frame::Spare(first_throw, pins));
+                            self.current_frame = None
+                        }
+                        _ => {
+                            self.completed_frames.push(Frame::Open(first_throw, pins));
+                            self.current_frame = None
+                        }
+                    },
+                    None => {
+                        if pins == 10 {
+                            self.completed_frames.push(Frame::Strike);
+                        } else {
+                            self.current_frame = Some(pins)
+                        }
+                    }
+                },
+            }
         }
+
         Ok(())
+
     }
 
     pub fn score(&self) -> Option<u16> {
